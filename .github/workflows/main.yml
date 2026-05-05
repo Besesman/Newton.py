@@ -19,9 +19,9 @@ jobs:
           pip install numpy matplotlib pyinstaller
       - name: Build EXE
         run: |
-          pyinstaller --onefile --windowed --collect-all matplotlib --collect-all numpy --hidden-import=matplotlib.backends.backend_tkagg Newton.py
+          pyinstaller --onefile --windowed --collect-all matplotlib --collect-all numpy --hidden-import=matplotlib.backends.backend_tkagg a method by Newton.py
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Newton.exe
+          name: Newton_exe
           path: dist/*.exe
