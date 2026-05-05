@@ -1,0 +1,110 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import cmath
+import sys
+
+# ================== 牛顿法求近似值（若要修改函数，请在此部分修改) ==================
+def f(z):
+    """原函数 f(z) = z * e^z - 1"""
+    return z * cmath.exp(z) - 1
+
+def df(z):
+    """导函数 f'(z) = e^z + z * e^z"""
+    ez = cmath.exp(z)
+    return ez + z * ez
+
+def newton_root(initial, tol=1e-7, max_iter=1000):
+    """
+    牛顿法求复数根
+    返回 (根, 迭代次数, 是否成功)
+    """
+    x = complex(initial)
+    for k in range(max_iter):
+        df_val = df(x)
+        if abs(df_val) < 1e-12:
+            return None, k, False
+        x_new = x - f(x) / df_val
+        if abs(x_new - x) < tol:
+            return x_new, k, True
+        x = x_new
+    return None, max_iter, False
+
+# ================== 三维可视化 ==================
+def plot_surface_and_root(root):
+    """
+    绘制 |f(z)| 的三维曲面图，并标记方程的根
+    """
+    # 定义复平面范围 (实部, 虚部)
+    re_min, re_max = -2.0, 2.0
+    im_min, im_max = -2.0, 2.0
+    grid_points = 200   # 网格密度
+
+    # 生成网格
+    real_vals = np.linspace(re_min, re_max, grid_points)
+    imag_vals = np.linspace(im_min, im_max, grid_points)
+    Re, Im = np.meshgrid(real_vals, imag_vals)
+    Z = Re + 1j * Im   # 复数网格
+
+    # 计算 |f(z)| = |z * e^z - 1|
+    # 注意：numpy 原生支持复数运算，向量化计算速度很快
+    F = Z * np.exp(Z) - 1
+    absF = np.abs(F)
+
+    # 创建三维图形
+    fig = plt.figure(figsize=(12, 8))
+    ax = fig.add_subplot(111, projection='3d')
+
+    # 绘制曲面 (使用对数尺度可以更好显示低谷，这里直接画模值，低谷在根附近)
+    surf = ax.plot_surface(Re, Im, absF, cmap='viridis', 
+                           linewidth=0, antialiased=True, alpha=0.8)
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, label='|f(z)|')
+
+    # 标记根的位置
+    if root is not None:
+        root_val = abs(f(root))   # 理论上非常接近0
+        # 在曲面上绘制大红点 (标记在曲面上的对应高度处)
+        ax.scatter(root.real, root.imag, root_val, 
+                   color='red', s=100, edgecolors='black', linewidth=1.5, 
+                   label=f'Root: {root.real:.5f} + {root.imag:.5f}i')
+        # 添加文本标签 (稍微抬高避免遮挡)
+        ax.text(root.real, root.imag, root_val + 0.2, 
+                f'Root\n({root.real:.4f}, {root.imag:.4f})', 
+                ha='center', va='bottom', fontsize=9, color='red')
+    else:
+        # 如果没有求得根，在控制台提示
+        print("未找到有效的根，无法在图中标记。")
+
+    # 设置坐标轴标签
+    ax.set_xlabel('Real Part (Re)', fontsize=10)
+    ax.set_ylabel('Imaginary Part (Im)', fontsize=10)
+    ax.set_zlabel('|f(z)|', fontsize=10)
+    ax.set_title(r'$|f(z)| = |z \cdot e^{z} - 1|$ 的三维曲面图及根的位置', fontsize=12)
+
+    # 添加图例（如果有根标记）
+    if root is not None:
+        ax.legend(loc='upper right')
+
+    # 调整视角以便更清晰观察低谷和标记点
+    ax.view_init(elev=25, azim=-60)
+
+    plt.tight_layout()
+    plt.show()
+
+# ================== 主程序 ==================
+if __name__ == "__main__":
+    # 使用初始值 0.5 (纯实数) 进行牛顿迭代
+    init_val = 0.5 + 0j    #其中，初始点位置的选择为:实部+虚部j
+    root, iterations, success = newton_root(init_val)
+
+    if success:
+        print(f"牛顿法收敛成功，迭代次数：{iterations}")
+        print(f"方程的根：{root}")
+        print(f"实部：{root.real:.10f}  虚部：{root.imag:.10f}")
+        print(f"|f(root)| = {abs(f(root)):.2e}")
+    else:
+        print("牛顿法未能在指定迭代次数内收敛或导数过小。")
+        root = None
+
+    # 绘制三维曲面图并显示根
+    plot_surface_and_root(root)
